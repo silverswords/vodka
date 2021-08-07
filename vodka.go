@@ -1,24 +1,26 @@
 package vodka
 
 import (
-	"github.com/yusank/vodka/client"
-	"github.com/yusank/vodka/cmd"
-	"github.com/yusank/vodka/config"
-	"github.com/yusank/vodka/registry"
-	"github.com/yusank/vodka/selector"
-	"github.com/yusank/vodka/server"
+	"golang.org/x/sync/errgroup"
 )
 
 // Service is vodka service
-type Service interface {
-	Init()
-	Option()
-	Start()
-	Stop()
-	Client() client.Client
-	Server() []server.Server
-	Config() config.Config
-	Selector() selector.Selector
-	Registry() registry.Registry
-	Cmd() cmd.Cmd
+type Service struct {
+	opts     *Options
+	errGroup *errgroup.Group
+}
+
+// Option Service option func
+type Option func(*Options)
+
+func NewService(opts ...Option) *Service {
+	return &Service{}
+}
+
+func (s *Service) Start() error {
+	for _, srv := range s.opts.Server {
+		s.errGroup.Go(srv.Start)
+	}
+
+	return s.errGroup.Wait()
 }
